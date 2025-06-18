@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../services/api';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import CalendarHeatmap from 'react-calendar-heatmap';
 import 'react-calendar-heatmap/dist/styles.css';
@@ -13,27 +13,30 @@ const StudentProfile = () => {
   const [problemStats, setProblemStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('contests');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setError('');
         
         // Fetch student data
-        const studentRes = await axios.get(`/api/students/${id}`);
+        const studentRes = await api.students.getById(id);
         setStudent(studentRes.data);
         
         // Fetch contest stats
-        const contestRes = await axios.get(`/api/contests/stats/student/${id}`);
+        const contestRes = await api.contests.getContestStats(id);
         setContestStats(contestRes.data);
         
         // Fetch problem stats
-        const problemRes = await axios.get(`/api/problems/stats/student/${id}`);
+        const problemRes = await api.problems.getProblemStats(id);
         setProblemStats(problemRes.data);
         
         setLoading(false);
       } catch (error) {
         console.error('Error fetching student data:', error);
+        setError('Failed to load student data. Please try again.');
         setLoading(false);
       }
     };
@@ -43,7 +46,7 @@ const StudentProfile = () => {
 
   const handleSyncClick = async () => {
     try {
-      await axios.post(`/api/students/${id}/sync`);
+      await api.students.triggerSync(id);
       alert('Sync triggered successfully');
     } catch (error) {
       console.error('Error triggering sync:', error);

@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 
 export const AuthContext = createContext();
 
@@ -14,9 +14,8 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const loadStudent = async () => {
       if (localStorage.token) {
-        setAuthToken(localStorage.token);
         try {
-          const res = await axios.get('/api/students/profile');
+          const res = await api.auth.getProfile();
           setAuth({
             ...auth,
             isAuthenticated: true,
@@ -29,8 +28,7 @@ export const AuthProvider = ({ children }) => {
             ...auth,
             token: null,
             isAuthenticated: false,
-            loading: false,
-            student: null
+            loading: false
           });
         }
       } else {
@@ -45,54 +43,47 @@ export const AuthProvider = ({ children }) => {
     loadStudent();
   }, []);
 
-  // Set auth token in headers
-  const setAuthToken = token => {
-    if (token) {
-      axios.defaults.headers.common['x-auth-token'] = token;
-    } else {
-      delete axios.defaults.headers.common['x-auth-token'];
-    }
-  };
-
   // Register student
-  const register = async formData => {
+  const register = async (formData) => {
     try {
-      const res = await axios.post('/api/students/register', formData);
+      const res = await api.auth.register(formData);
       localStorage.setItem('token', res.data.token);
-      setAuthToken(res.data.token);
       setAuth({
         ...auth,
         token: res.data.token,
         isAuthenticated: true,
-        loading: false,
-        student: res.data.student
+        loading: false
       });
       return { success: true };
     } catch (err) {
-      return { success: false, error: err.response.data.message };
+      return { 
+        success: false, 
+        error: err.response?.data?.message || 'Registration failed' 
+      };
     }
   };
 
   // Login student
-  const login = async formData => {
+  const login = async (formData) => {
     try {
-      const res = await axios.post('/api/students/login', formData);
+      const res = await api.auth.login(formData);
       localStorage.setItem('token', res.data.token);
-      setAuthToken(res.data.token);
       setAuth({
         ...auth,
         token: res.data.token,
         isAuthenticated: true,
-        loading: false,
-        student: res.data.student
+        loading: false
       });
       return { success: true };
     } catch (err) {
-      return { success: false, error: err.response.data.message };
+      return { 
+        success: false, 
+        error: err.response?.data?.message || 'Login failed' 
+      };
     }
   };
 
-  // Logout
+  // Logout student
   const logout = () => {
     localStorage.removeItem('token');
     setAuth({
